@@ -1,0 +1,5 @@
+Go/bin
+Go/pkg
+Go/src
+Go/**/*.gif
+.vscode
