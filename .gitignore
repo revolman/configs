@@ -3,4 +3,5 @@ Go/pkg
 Go/src
 Go/**/*.gif
 **/*.mmdb
+**/__pycache__
 .vscode
