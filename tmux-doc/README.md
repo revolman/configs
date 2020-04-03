@@ -9,7 +9,7 @@
 
 https://github.com/ohmyzsh/ohmyzsh
 Я редактировал эту:
-<home>/.oh-my-zsh/themes/robbyrussell.zsh-theme
+$HOME/.oh-my-zsh/themes/robbyrussell.zsh-theme
 
 ```
 function prompt_char {
