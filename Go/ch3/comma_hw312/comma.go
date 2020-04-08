@@ -17,7 +17,7 @@ func main() {
 	if anagramma(arg1, arg2) {
 		fmt.Println("Это анаграмма!")
 	} else {
-		fmt.Println("Это фигня какая-то!")
+		fmt.Println("Это не анаграмма!")
 	}
 }
 
@@ -26,6 +26,9 @@ func main() {
 func anagramma(s1 string, s2 string) bool {
 	var sum1 int
 	var sum2 int
+	if s1 == s2 { // Вообще, если строки одинаковы, то я бы сказал, что это частный случай анаграммы, но ОК.
+		return false
+	}
 	for _, r := range s1 {
 		sum1 += int(r)
 	}
