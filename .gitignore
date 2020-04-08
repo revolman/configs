@@ -1,7 +1,9 @@
 Go/bin
 Go/pkg
 Go/src
+Go/proverki
 Go/**/*.gif
+Go/**/*.png
 **/*.mmdb
 **/__pycache__
 .vscode
