@@ -20,8 +20,8 @@ func main() {
 	// )
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/png")
-		xKey := r.URL.Query().Get("x")
+		w.Header().Set("Content-Type", "image/png") // уточняю хедер
+		xKey := r.URL.Query().Get("x")              // получаю параметры из url (?x=2&y=2&resolution=1024)
 		yKey := r.URL.Query().Get("y")
 		resolutionKey := r.URL.Query().Get("resolution")
 
