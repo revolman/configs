@@ -4,10 +4,7 @@ import "fmt"
 
 func main() {
 	s := [...]int{0, 1, 2, 3, 4, 5}
-	fmt.Printf("%d\n%d\n", s, reverse(s[0:6]))
-	reverse(s[:2])
-	reverse(s[2:])
-	fmt.Println(s)
+	fmt.Printf("%d\n%d\n", s, reverse(s[:]))
 }
 
 func reverse(s []int) []int {

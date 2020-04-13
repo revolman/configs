@@ -4,6 +4,7 @@ Go/src
 Go/proverki
 Go/**/*.gif
 Go/**/*.png
+Go/**/test.txt
 **/*.mmdb
 **/__pycache__
 .vscode
