@@ -9,8 +9,8 @@ func main() {
 }
 
 func dupl(strings []string) []string {
-	last := ""
-	correction := 0
+	var last string
+	var correction int
 
 	for i, s := range strings {
 		if s == last {
