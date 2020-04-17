@@ -16,6 +16,7 @@ func main() {
 	// Этоа структура описана в пакете github.
 	var lastMonth []*github.Issues
 	var lastYear []*github.Issues
+
 	// Беру текущий год и месяц
 	yearNow, monthNow, _ := time.Now().Date()
 
@@ -28,7 +29,7 @@ func main() {
 		yearCreated, monthCreated, _ := item.CreatedAt.Date()
 
 		// Группировка по признаку "За текущий месяц"
-		if yearNow == yearCreated && monthCreated == monthNow {
+		if yearNow == yearCreated && monthCreated-monthNow == 0 {
 			// Добавляю текущий Item в срез lastMonth
 			lastMonth = append(lastMonth, item)
 		}
@@ -41,12 +42,12 @@ func main() {
 
 	fmt.Printf("%d тем за всё время.\n", result.TotalCount)
 
-	fmt.Printf("%d тем в текущем месяце:\n", len(lastMonth))
+	fmt.Printf("[Тут количество] тем в текущем месяце:\n")
 	for _, item := range lastMonth {
 		fmt.Printf("#%-5d %9.9s %-55.55s %10.10s\n", item.Number, item.User.Login, item.Title, item.CreatedAt)
 	}
 
-	fmt.Printf("\n%d тем в текущем году:\n", len(lastYear))
+	fmt.Printf("\n[Тут количество] тем в текущем году:\n")
 	for _, item := range lastYear {
 		fmt.Printf("#%-5d %9.9s %-55.55s %10.10s\n", item.Number, item.User.Login, item.Title, item.CreatedAt)
 	}
