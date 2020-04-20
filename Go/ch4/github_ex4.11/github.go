@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/oauth2"
 )
 
 // ReposAPI - ссылка на API
@@ -20,6 +21,8 @@ const ReposAPI = "https://api.github.com/repos/"
 
 // IssuesURL - адрес API для работы с поиском issues
 const IssuesURL = "https://api.github.com/search/issues"
+
+var personalAccessToken = "ac44681d20e5a97ce7c4fee42719e4d35d374f67"
 
 // IssuesSearchResult - структура для хранения результата выполненного поиска
 type IssuesSearchResult struct {
@@ -40,6 +43,11 @@ type Issues struct {
 // User - структура хранения инфы о пользователе
 type User struct {
 	Login string
+}
+
+// TokenSource - храненеи токена аутентификации
+type TokenSource struct {
+	AccessToken string
 }
 
 // SearchAnIssues - делает http.Get запрос к API issues Github,
@@ -93,14 +101,24 @@ func UpdateAnIssue(method string, query string, data map[string]string) (*Issues
 	}
 	buf := bytes.NewBuffer(jsonData)
 
-	client := &http.Client{} // подготовка клиента
-	username, password := credentials()
+	// В комментарии указан Depricated способо аутентификации
+	// old auth >
+	// client := &http.Client{} // подготовка клиента
+	// username, password := credentials()
+	// req, err := http.NewRequest(method, query, buf)
+	// req.SetBasicAuth(username, password)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// resp, err := client.Do(req) // клиент делает запрос, получает ответ или ошибку
+	// < old auth
+
 	req, err := http.NewRequest(method, query, buf)
-	req.SetBasicAuth(username, password)
-	if err != nil {
-		return nil, err
+	tokenSource := &TokenSource{
+		AccessToken: personalAccessToken,
 	}
-	resp, err := client.Do(req) // клиент делает запрос, получает ответ или ошибку
+	oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
+	resp, err := oauthClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Ошибка: %v", err)
 	}
@@ -142,16 +160,16 @@ func GetAnIssue(owner string, repo string, number string) (*Issues, error) {
 
 // Получаю username и password
 // Для скрытого ввода пароля используется библиотека golang.org/x/crypto/ssh/terminal.
-// Аутентификация по логину и паролю признана устаревшей - использовать токен.
+// Аутентификация по логину и паролю признана устаревшей, данная функция не используется.
+// Заменил на oauth2, для аутентификации через токен.
+// Оставлено в коде как памятка.
 func credentials() (string, string) {
 	reader := bufio.NewReader(os.Stdin)
-
 	fmt.Print("Введите логин: ")
 	username, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\nОшибка: %v\n", err)
 	}
-
 	fmt.Print("Введите пароль: ")
 	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
@@ -160,4 +178,12 @@ func credentials() (string, string) {
 	password := string(bytePassword)
 
 	return strings.TrimSpace(username), strings.TrimSpace(password)
+}
+
+// Token auth
+func (t *TokenSource) Token() (*oauth2.Token, error) {
+	token := &oauth2.Token{
+		AccessToken: t.AccessToken,
+	}
+	return token, nil
 }

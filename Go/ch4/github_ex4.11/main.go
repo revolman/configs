@@ -60,15 +60,19 @@ func main() {
 		}
 		fmt.Printf("Запрос темы #%s\n", args[2])
 		number := args[2]
-		GetAnIssue(owner, repo, number)
+		get(owner, repo, number)
+	default:
+		exitWithUsage()
 	}
 }
 
 func exitWithUsage() {
-	fmt.Fprintf(os.Stderr, "Usage:\n"+
-		"search QUERY\n"+
-		"getll|create OWNER REPO\n"+
-		"update|get OWNER REPO NUMBER\n")
+	fmt.Fprintf(os.Stderr, "Использование:\n"+
+		"search QUERY \t\t - поиск issue по указанным темам, возможно указывать фильтры в соответствии с api\n"+
+		"get OWNER REPO NUMBER\t - вывод одной темы\n"+
+		"getll OWNER REPO \t - получение списка тем в указанном репозитории\n"+
+		"create OWNER REPO \t - создание новой темы в указанном репозитории\n"+
+		"update OWNER REPO NUMBER \t - внесение изменений в указанную тему, в том числе её открытие и закрытие\n")
 	os.Exit(1)
 }
 
@@ -84,6 +88,16 @@ func getAll(owner string, repo string) {
 			item.Number, item.User.Login, item.Title,
 			item.CreatedAt.Format(time.RFC3339))
 	}
+}
+
+func get(owner string, repo string, number string) {
+	issue, err := GetAnIssue(owner, repo, number)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("#%-5d %9.9s %-55.55s %-10.10s\n",
+		issue.Number, issue.User.Login, issue.Title,
+		issue.CreatedAt.Format(time.RFC3339))
 }
 
 // search - поиск по issues. Запускается во всех случаях, когда не указано другое действие
@@ -129,6 +143,7 @@ func create(owner string, repo string) {
 		result.CreatedAt.Format(time.RFC3339))
 }
 
+// Внесение изменений в issue
 func update(owner string, repo string, number string) {
 	const method string = "PATCH"
 
@@ -142,15 +157,14 @@ func update(owner string, repo string, number string) {
 		log.Fatal(err)
 	}
 	file.WriteString("Title: " + issue.Title +
-		"\nBody: " + issue.Body +
-		"\nState: " + issue.State)
+		"\nState: " + issue.State +
+		"\nBody: " + issue.Body)
 	defer file.Close()
 	// вызываю эдитор
 	Edit("vim", fpath)
 	// преобразаую ввод юзера в отображение
 	data := ParseFile(fpath)
-
-	// ####### далее тест #######
+	// подготовка url
 	query := ReposAPI + strings.Join([]string{owner, repo, "issues", number}, "/")
 
 	result, err := UpdateAnIssue(method, query, data)
