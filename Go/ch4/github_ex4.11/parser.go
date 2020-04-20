@@ -3,46 +3,30 @@ package main
 
 import (
 	"bufio"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-var err error
-
-// TMPFile создаёт шаблон файла и вызывает текстовый редактор для его заполнения.
-// Возвращает путь ко временному файлу типа string.
-func TMPFile() string {
-	fpath := os.TempDir() + "/github_issues.tmp"
-
-	if err = ioutil.WriteFile(fpath, []byte("Title: \nBody: "), 0644); err != nil {
-		log.Fatalf("Ошибка при создании шаблона файла: %v", err)
-	}
-
-	cmd := exec.Command("vim", fpath)
+// Edit - вызов эдитора
+func Edit(e string, fpath string) {
+	cmd := exec.Command(e, fpath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Start()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		log.Fatalf("Ошибка: %v\n", err)
 	}
-	err = cmd.Wait()
-	if err != nil {
-		log.Printf("Ошибка в время редактирования. Error: %v\n", err)
-	} else {
-		log.Printf("Успешно отредактировано.\n")
-	}
-	return fpath
+	fmt.Println("Успешно отредактировано.")
 }
 
 // ParseFile сканирует врменный текстовый файл, затем удаляет его.
 // Создаёт отображение, в котором записаны Title и Body Issue.
 // Возвращает указатель на отображение.
-func ParseFile() map[string]string {
-	fpath := TMPFile()
+func ParseFile(fpath string) map[string]string {
+	// fpath := TMPFile()
 	file, err := os.Open(fpath)
 	if err != nil {
 		log.Fatal(err)
@@ -65,6 +49,12 @@ func ParseFile() map[string]string {
 			continue
 		}
 
+		if strings.HasPrefix(line, "State: ") {
+			line = strings.TrimPrefix(line, "State: ")
+			data["state"] += line
+			continue
+		}
+
 		if strings.HasPrefix(line, "Body: ") {
 			body = strings.TrimPrefix(line, "Body: ")
 			afterBody = true
@@ -76,11 +66,6 @@ func ParseFile() map[string]string {
 		}
 	}
 	data["body"] += body
-
-	// Debug info
-	// for item := range data {
-	// 	fmt.Printf("Key: %s\tValue: %s\n", item, data[item])
-	// }
 
 	if err = os.Remove(fpath); err != nil {
 		log.Fatalf("Ошибка при удалении временного файла: %v", err)

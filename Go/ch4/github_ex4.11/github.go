@@ -84,8 +84,8 @@ func GetAnIssues(owner string, repo string) ([]Issues, error) {
 	return result, nil
 }
 
-// CreateAnIssue создаёт новую тему (Issue)
-func CreateAnIssue(owner string, repo string, data map[string]string) (*Issues, error) {
+// UpdateAnIssue универсальная функция обновления issue
+func UpdateAnIssue(method string, query string, data map[string]string) (*Issues, error) {
 	// преобразование данных в формат JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -93,33 +93,56 @@ func CreateAnIssue(owner string, repo string, data map[string]string) (*Issues, 
 	}
 	buf := bytes.NewBuffer(jsonData)
 
-	// аутентификация на github
-	client := &http.Client{}                                             // подготовка клиента
-	username, password := credentials()                                  // получение логина и пароля
-	q := ReposAPI + strings.Join([]string{owner, repo}, "/") + "/issues" // подготовка url
-
-	req, err := http.NewRequest("POST", q, buf) // подготовка POST запроса
-	req.SetBasicAuth(username, password)        // в запрос будет добавлен авторизационный заголовок
-
+	client := &http.Client{} // подготовка клиента
+	username, password := credentials()
+	req, err := http.NewRequest(method, query, buf)
+	req.SetBasicAuth(username, password)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := client.Do(req) // клиент делает запрос, получает ответ или ошибку
 	if err != nil {
-
 		return nil, fmt.Errorf("Ошибка: %v", err)
 	}
-	if resp.StatusCode != http.StatusCreated { // проверка статус кода
+	if method == "POST" && resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("Статус: %s", resp.Status)
+	}
+	if method == "PATCH" && resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Статус: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
-	var result Issues                                                  // определяю переменную для хранения результата
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil { // расшифровка тела ответа в структуру Issues
+	var result Issues
+
+	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
-	return &result, nil // возвращаю указатель на результат
+
+	return &result, nil
+}
+
+// GetAnIssue возвращает тему, которую можно использовать, к примеру для редактирования
+func GetAnIssue(owner string, repo string, number string) (*Issues, error) {
+	q := strings.Join([]string{owner, repo, "issues", number}, "/")
+	resp, err := http.Get(ReposAPI + q)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Сбой подключения: %v", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	var result Issues
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 // Получаю username и password
-// Для скрытого ввода пароля используется библиотека golang.org/x/crypto/ssh/terminal
+// Для скрытого ввода пароля используется библиотека golang.org/x/crypto/ssh/terminal.
+// Аутентификация по логину и паролю признана устаревшей - использовать токен.
 func credentials() (string, string) {
 	reader := bufio.NewReader(os.Stdin)
 
