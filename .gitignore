@@ -3,8 +3,10 @@ Go/pkg
 Go/src
 Go/proverki
 Go/**/*.gif
+Go/**/*.txt
 Go/**/*.png
-Go/**/test.txt
+Go/**/*.gif
+Go/**/*.json
 Go/**/*_test
 **/*.mmdb
 **/__pycache__
