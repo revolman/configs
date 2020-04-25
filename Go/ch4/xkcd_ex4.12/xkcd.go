@@ -17,6 +17,7 @@ type Comics struct {
 	Month      string
 	Year       string
 	Num        int
+	IMG        string
 	Title      string
 	Transcript string
 }
@@ -24,45 +25,111 @@ type Comics struct {
 const xkcdURL string = "https://xkcd.com"
 
 func main() {
-	_, err := os.Stat("comics.json")
+	var fname = "comics.json"
+	_, err := os.Stat(fname)
+
+	// cmd := os.Args[1]
+	// args := os.Args[2:]
 
 	if os.IsNotExist(err) {
 		fmt.Println("Архива не обнаружен. Подготовка архива:")
 
 		template, _ := json.MarshalIndent([]Comics{}, "", " ")
-		if err := ioutil.WriteFile("comics.json", template, 0644); err != nil {
+		if err := ioutil.WriteFile(fname, template, 0644); err != nil {
 			log.Fatal("Ошибка при создании шаблона файла: ", err)
 		}
-		getComs(1, lastOnSite())
-		os.Exit(0)
+		getComs(1, lastOnSite(), fname)
+	} else {
+		getComs(lastIndex(fname)+1, lastOnSite(), fname)
+		fmt.Println("Архив а актуальном состоянии.")
 	}
 
-	getComs(lastIndex()+1, lastOnSite())
-	fmt.Println("Архив а актуальном состоянии.")
-
+	// Вызов поиска
+	if os.Args[1] == "search" {
+		args := os.Args[2:]
+		fmt.Printf("Поиск %q в архиве\n", strings.Join(args, " "))
+		search(fname, args)
+		os.Exit(0)
+	}
+	exitWithUsage()
 }
 
-func getComs(num int, end int) {
-	// var comics []*Comics
+func exitWithUsage() {
+	fmt.Printf("Использование:\nsearch QUERY\t - поиск по архиву\n")
+	os.Exit(0)
+}
+
+// search - обеспечивает поиск по архиву
+func search(fname string, args []string) {
+	archive := alreadyInArchive(fname)
+	query := strings.Join(args, " ")
+
+	var result1, result2, result3 []*Comics
+
+	for _, item := range archive {
+		if strings.Contains(item.Transcript, query) {
+			result1 = append(result1, item)
+		}
+
+		if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) && strings.Contains(item.Transcript, args[2]) {
+			result2 = append(result2, item)
+		}
+
+		if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) {
+			result3 = append(result3, item)
+		}
+	}
+
+	fmt.Println("Точные совпадения:")
+	for _, item := range result1 {
+		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+	}
+	fmt.Println("Совпадение по трём словам:")
+	for _, item := range result2 {
+		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+	}
+	fmt.Println("Совпадение по двум словам:")
+	for _, item := range result3 {
+		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+	}
+}
+
+func alreadyInArchive(fname string) []*Comics {
 	var alreadyInFile []*Comics
 
-	rfile, err := os.OpenFile("comics.json", os.O_RDONLY, 0644) // дескриптор указывает на то что файл открыт только на чтение
+	rfile, err := os.OpenFile(fname, os.O_RDONLY, 0644)
 	if err != nil {
 		log.Fatalf("Открыие файла на чтение: %v\n", err)
 	}
 	defer rfile.Close()
 
-	wfile, err := os.OpenFile("comics.json", os.O_WRONLY, 0644) // дескриптор указывает на то что файл открыт на перезапись
+	if err := json.NewDecoder(rfile).Decode(&alreadyInFile); err != nil {
+		log.Fatal("Ошибка декодирования:", err)
+	}
+
+	return alreadyInFile
+}
+
+// getComs - проверяет содержимое архива и при необходимости дополняет его
+func getComs(num int, end int, fname string) {
+	alreadyInFile := alreadyInArchive(fname)
+
+	// rfile, err := os.OpenFile("comics.json", os.O_RDONLY, 0644) // дескриптор указывает на то что файл открыт только на чтение
+	// if err != nil {
+	// 	log.Fatalf("Открыие файла на чтение: %v\n", err)
+	// }
+	// defer rfile.Close()
+
+	// if err := json.NewDecoder(rfile).Decode(&alreadyInFile); err != nil {
+	// 	log.Fatal("Ошибка декодирования:", err)
+	// }
+
+	wfile, err := os.OpenFile(fname, os.O_WRONLY, 0644) // дескриптор указывает на то что файл открыт на перезапись
 	if err != nil {
 		log.Fatalf("Открыие файла на чтение: %v\n", err)
 	}
 	defer wfile.Close()
 
-	if err := json.NewDecoder(rfile).Decode(&alreadyInFile); err != nil {
-		log.Fatal("Ошибка декодирования:", err)
-	}
-
-	// for num := 1; num <= countComs(); num++ {
 	for num <= end {
 		q := strings.Join([]string{xkcdURL, strconv.Itoa(num), "info.0.json"}, "/")
 		num++
@@ -82,8 +149,6 @@ func getComs(num int, end int) {
 			log.Fatal("Ошибка декодирования:", err)
 		}
 
-		// этот сроез вообще нужен?
-		// comics = append(comics, &result)
 		fmt.Println(result.Num)
 
 		alreadyInFile = append(alreadyInFile, &result)
@@ -95,8 +160,8 @@ func getComs(num int, end int) {
 	wfile.WriteString(string(marshaled) + "\n")
 }
 
-func lastIndex() int {
-	file, err := os.OpenFile("comics.json", os.O_RDONLY, 0644)
+func lastIndex(fname string) int {
+	file, err := os.OpenFile(fname, os.O_RDONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
