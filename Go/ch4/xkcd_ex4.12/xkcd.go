@@ -28,9 +28,6 @@ func main() {
 	var fname = "comics.json"
 	_, err := os.Stat(fname)
 
-	// cmd := os.Args[1]
-	// args := os.Args[2:]
-
 	if os.IsNotExist(err) {
 		fmt.Println("Архива не обнаружен. Подготовка архива:")
 
@@ -42,6 +39,10 @@ func main() {
 	} else {
 		getComs(lastIndex(fname)+1, lastOnSite(), fname)
 		fmt.Println("Архив а актуальном состоянии.")
+	}
+
+	if len(os.Args[1:]) < 2 {
+		exitWithUsage()
 	}
 
 	// Вызов поиска
@@ -60,7 +61,7 @@ func exitWithUsage() {
 }
 
 // search - обеспечивает поиск по архиву
-func search(fname string, args []string) {
+func search(fname string, args []string) { // фиговенький алгоритм, нужно позже переписать.
 	archive := alreadyInArchive(fname)
 	query := strings.Join(args, " ")
 
@@ -71,26 +72,30 @@ func search(fname string, args []string) {
 			result1 = append(result1, item)
 		}
 
-		if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) && strings.Contains(item.Transcript, args[2]) {
-			result2 = append(result2, item)
+		if len(args) >= 3 {
+			if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) && strings.Contains(item.Transcript, args[2]) {
+				result2 = append(result2, item)
+			}
 		}
 
-		if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) {
-			result3 = append(result3, item)
+		if len(args) >= 2 {
+			if strings.Contains(item.Transcript, args[0]) && strings.Contains(item.Transcript, args[1]) {
+				result3 = append(result3, item)
+			}
 		}
 	}
 
 	fmt.Println("Точные совпадения:")
 	for _, item := range result1 {
-		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+		fmt.Printf("#%-5d %-25.25s %-55.55s...\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
 	}
 	fmt.Println("Совпадение по трём словам:")
 	for _, item := range result2 {
-		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+		fmt.Printf("#%-5d %-25.25s %-55.55s...\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
 	}
 	fmt.Println("Совпадение по двум словам:")
 	for _, item := range result3 {
-		fmt.Printf("#%-5d %-25.25s %-55.55s\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
+		fmt.Printf("#%-5d %-25.25s %-55.55s...\n", item.Num, xkcdURL+"/"+strconv.Itoa(item.Num), item.Transcript)
 	}
 }
 
@@ -111,18 +116,8 @@ func alreadyInArchive(fname string) []*Comics {
 }
 
 // getComs - проверяет содержимое архива и при необходимости дополняет его
-func getComs(num int, end int, fname string) {
+func getComs(num int, end int, fname string) { // добавить скачивание в несколько потоков, когда дойду до этого в учебнике =)
 	alreadyInFile := alreadyInArchive(fname)
-
-	// rfile, err := os.OpenFile("comics.json", os.O_RDONLY, 0644) // дескриптор указывает на то что файл открыт только на чтение
-	// if err != nil {
-	// 	log.Fatalf("Открыие файла на чтение: %v\n", err)
-	// }
-	// defer rfile.Close()
-
-	// if err := json.NewDecoder(rfile).Decode(&alreadyInFile); err != nil {
-	// 	log.Fatal("Ошибка декодирования:", err)
-	// }
 
 	wfile, err := os.OpenFile(fname, os.O_WRONLY, 0644) // дескриптор указывает на то что файл открыт на перезапись
 	if err != nil {
@@ -135,12 +130,13 @@ func getComs(num int, end int, fname string) {
 		num++
 		resp, err := http.Get(q)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("Ошибка при загрузке комикса: %v\n", err)
+			continue
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			fmt.Println("Статус не ОК")
+			fmt.Println("Статус не ОК") // комикс №404 выдаёт StatusCode 404 =)
 			continue
 		}
 
@@ -173,7 +169,7 @@ func lastIndex(fname string) int {
 	}
 
 	index := result[len(result)-1].Num
-	fmt.Printf("lastIndex считает, что номер последнего комикса %d\n", index)
+	// fmt.Printf("lastIndex считает, что номер последнего комикса %d\n", index)
 
 	return index
 }
