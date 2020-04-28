@@ -29,7 +29,8 @@ type Movie struct {
 	Type       string
 	Actors     string
 	Plot       string
-	imdbID     string
+	ImdbID     string
+	Response   string
 }
 
 // Ratings ...
@@ -38,10 +39,10 @@ type Ratings struct {
 	Value  string
 }
 
-// SearchingResult ...
+// SearchingResult хранит все результатs поиска, но нас сейчас интересует только первый фильм
 type SearchingResult struct {
 	Search       []*Search
-	totalResults string
+	TotalResults string
 	Response     string
 }
 
@@ -56,40 +57,88 @@ type Search struct {
 
 func main() {
 	if len(os.Args[1:]) < 1 {
-		fmt.Printf("Использование:\nВведите название фильма, который ищете")
-		os.Exit(1)
-	}
-	// Определение поискового запроса и запуск поиска
-	query := strings.Join(os.Args[1:], " ")
-	result, err := searching(query)
-	if err != nil {
-		log.Fatalf("%v\n", err)
-	}
-	for _, item := range result {
-		fmt.Println("Найдено:")
-		fmt.Printf("imdbID: %s\t%s\n", )
+		Usage()
 	}
 
+	cmd := os.Args[1]
+	query := strings.Join(os.Args[2:], " ")
+
+	switch cmd {
+	case "search":
+		searchResult, err := Searching(query)
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
+		fmt.Println("Всего найдено: ", searchResult.TotalResults)
+		for _, item := range searchResult.Search {
+			fmt.Printf("%s - %s, %s\n", item.Title, item.Year, item.Type)
+		}
+	case "poster":
+		// вывод афиши >>>>
+		poster, err := GetPoster(query)
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
+		if poster.Response == "True" {
+			fmt.Println("Информация о фильме ", poster.Title)
+			fmt.Printf("\nПостер: %s\n\n"+
+				"Дата выпуска: %s\n"+
+				"Режиссёр: %s\n"+
+				"В ролях: %s\n"+
+				"Рейтинг IMDB: %s\n"+
+				"\nСюжет: %s\n\n", poster.Poster, poster.Released, poster.Director, poster.Actors, poster.IMDBRating, poster.Plot)
+		} else {
+			fmt.Println("К сожалению, фильма с таким названием не найдено.")
+		}
+	default:
+		Usage()
+	}
 }
 
-// searching ...
-func searching(query string) ([]SearchingResult, error) {
-	// q := strings.Join([]string{APIURL, "?apikey=" + APIKey + "&s=" + query}, "/")
+// Searching - получает список фильмов в соответствии с запросом
+// поиск по заданию не нужен.
+func Searching(query string) (*SearchingResult, error) {
 	q := url.QueryEscape(query)
-	fmt.Println(q)
 	resp, err := http.Get(APIURL + "?apikey=" + APIKey + "&s=" + q)
 	if err != nil {
-		return nil, fmt.Errorf("Не удаётся установить соединение")
+		return nil, fmt.Errorf("searching: Не удаётся установить соединение")
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Сбой подключения: %v", resp.Status)
 	}
 	defer resp.Body.Close()
 
-	var result []SearchingResult
+	var result SearchingResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("Ошибка маршалинга: %v", err)
 	}
 
-	return result, nil
+	return &result, nil
+}
+
+// GetPoster получает информацию о конкретном фильме
+func GetPoster(query string) (*Movie, error) {
+	q := url.QueryEscape(query)
+	resp, err := http.Get(APIURL + "?apikey=" + APIKey + "&t=" + q)
+	if err != nil {
+		return nil, fmt.Errorf("getPoster: Не удалось установить соединение")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Сбой подключения: %v", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	var result Movie
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("Ошибка маршалинга %v", err)
+	}
+
+	return &result, nil
+}
+
+// Usage завершает программу и выводит подсказку по использованию
+func Usage() {
+	fmt.Printf("Использование:\nsearch [query] - поиск фильмов по названию\n" +
+		"poster [film name] - вывод афиши фильма\n")
+	os.Exit(1)
 }
