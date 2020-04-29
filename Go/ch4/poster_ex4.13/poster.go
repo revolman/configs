@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"text/template"
 )
 
 // APIKey ...
@@ -15,6 +16,15 @@ const APIKey = "b414d24b"
 
 // APIURL ...
 const APIURL = "http://www.omdbapi.com/"
+
+// тест шаблонов >>>>
+const searchTempl = `{{.TotalResults}} результатов:
+{{range .Search}}---------------------------------
+Постер: {{.Poster}}
+Название: {{.Title}}
+Год выпуска: {{.Year}}
+Тип: {{.Type}}
+{{end}}`
 
 // Movie ...
 type Movie struct {
@@ -55,6 +65,10 @@ type Search struct {
 	Poster string
 }
 
+// тест шаблонов >>>>
+var searchReport = template.Must(template.New("searchReport").
+	Parse(searchTempl))
+
 func main() {
 	if len(os.Args[1:]) < 1 {
 		Usage()
@@ -69,10 +83,15 @@ func main() {
 		if err != nil {
 			log.Fatalf("%v\n", err)
 		}
-		fmt.Println("Всего найдено: ", searchResult.TotalResults)
-		for _, item := range searchResult.Search {
-			fmt.Printf("%s - %s, %s\n", item.Title, item.Year, item.Type)
+		// тест шаблонов >>>>
+		if err := searchReport.Execute(os.Stdout, searchResult); err != nil {
+			log.Fatal(err)
 		}
+
+		// fmt.Println("Всего найдено: ", searchResult.TotalResults)
+		// for _, item := range searchResult.Search {
+		// 	fmt.Printf("%s - %s, %s\n", item.Title, item.Year, item.Type)
+		// }
 	case "poster":
 		// вывод афиши >>>>
 		poster, err := GetPoster(query)
