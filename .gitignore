@@ -7,6 +7,8 @@ Go/**/*.txt
 Go/**/*.png
 Go/**/*.gif
 Go/**/*.json
+Go/**/*.html
+Go/**/*.htm
 Go/**/*_test
 **/*.mmdb
 **/__pycache__
