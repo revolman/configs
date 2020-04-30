@@ -50,17 +50,22 @@ type IssuesCache struct {
 // 	Comments	[]Comment
 // }
 
+// Метод ic типа IssueCache позволяет при любом вызове объекта типа IssueCache запускать функцию ServeHTTP,
+// которая является обработчиком запросов.
 func (ic IssuesCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := strings.SplitN(r.URL.Path, "/", -1)
 	if len(query) < 3 || query[2] == "" {
+		// если меньше 3х элементов или номер issue пустой
+		// Тогда просто вывести весь список полученных тем по шаблону issueListTemplate
 		if err := issuesTemplate.Execute(w, ic); err != nil {
 			log.Print(err)
 		}
 		return
 	}
-	numStr := query[2]
-	num, err := strconv.Atoi(numStr)
-	if err != nil {
+	// Во всех остальных случаях:
+	numStr := query[2]               // берётся номер темы из url
+	num, err := strconv.Atoi(numStr) // конвертируется в строку
+	if err != nil {                  // обработка неверных номеров
 		w.WriteHeader(http.StatusBadRequest)
 		_, err := w.Write([]byte(fmt.Sprintf("Номер задан не числом, вот этой фигнёй: '%s'", numStr)))
 		if err != nil {
@@ -69,6 +74,8 @@ func (ic IssuesCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	issue, ok := ic.IssuesByNumber[num]
+	// из полученного отображения по номеру выбирается тема
+	// Если тема не существует тогда обработать ошибку
 	if !ok {
 		_, err := w.Write([]byte(fmt.Sprintf("Не существует темы с номером %d", num)))
 		if err != nil {
@@ -76,12 +83,17 @@ func (ic IssuesCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// записать выбранную тему в ResponseWriter в виде шаблона issueTemplate
 	if err := issueTemplate.Execute(w, issue); err != nil {
 		log.Print(err)
 	}
 
 }
 
+// getNewCache Получает все Issues в указанном репозитории
+// Результат: структура IssueCache.
+// В результат записывает полученные данные. Использует метод ic.
+// ic IssueCache равно var ic IssueCache, только в виде именованного параметра функции
 func getNewCache(owner string, repo string) (ic IssuesCache, err error) {
 	issues, err := GetIssues(owner, repo)
 	if err != nil {
