@@ -34,6 +34,14 @@ var issueTemplate = template.Must(template.New("issueinfo").Parse(`
 	<h1>{{.Title}}</h1>
 	<samll>by <a href='{{.User.HTMLURL}}'>{{.User.Login}}</a></small>
 	<p>{{.Body}}</p>
+	<br>
+	<h3>Коментарии:</h3>
+`))
+
+var commentsTemplate = template.Must(template.New("comments").Parse(`
+	<p>#{{.ID}}, {{.User.Login}}</p>
+	{{.Body}}
+	<br>
 `))
 
 // IssuesCache - структура, в которую сохраняются все полученные темы
@@ -41,7 +49,7 @@ var issueTemplate = template.Must(template.New("issueinfo").Parse(`
 type IssuesCache struct {
 	Issues         []Issue
 	IssuesByNumber map[int]Issue
-	Comments       []Comment
+	Comments       map[int][]Comment
 }
 
 // type IssuesCache struct {
@@ -88,6 +96,22 @@ func (ic IssuesCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 	}
 
+	comments, ok := ic.Comments[num]
+	if !ok {
+		_, err := w.Write([]byte(fmt.Sprintf("Не существует темы с номером %d", num)))
+		if err != nil {
+			log.Printf("Не удалось создать запрос для %v: %v", r, err)
+		}
+		return
+	}
+
+	// для каждого шаблона в списке шаблонов делать запись во врайтер
+	for _, comment := range comments {
+		if err := commentsTemplate.Execute(w, comment); err != nil {
+			log.Printf("Преобразование шаблона commentsTemplate: %v", err)
+		}
+	}
+
 }
 
 // getNewCache Получает все Issues в указанном репозитории
@@ -97,12 +121,21 @@ func (ic IssuesCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func getNewCache(owner string, repo string) (ic IssuesCache, err error) {
 	issues, err := GetIssues(owner, repo)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Ошибка при получении Issues: %v", err)
 	}
+
 	ic.Issues = issues
+	// Создаю структуры по поличеству issues
 	ic.IssuesByNumber = make(map[int]Issue, len(issues))
+	ic.Comments = make(map[int][]Comment, len(issues))
 	for _, issue := range issues {
 		ic.IssuesByNumber[issue.Number] = issue
+		// Добавлять список комментов для каждой issue в отдельное поле IC
+		numStr := strconv.Itoa(issue.Number)
+		ic.Comments[issue.Number], err = GetComments(owner, repo, numStr)
+		if err != nil {
+			log.Fatalf("Ошибка при получении комментариев: %v", err)
+		}
 	}
 
 	return
