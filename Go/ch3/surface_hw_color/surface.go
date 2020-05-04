@@ -45,12 +45,12 @@ func main() {
 	fmt.Println("</svg>")
 }
 
-func corner(i, j int) (float64, float64) {
+func corner(i, j int) (sx, sy float64) {
 	x, y, z := xyz(i, j)
 	// Изометрически проецируем (x,y,z) на двумерную канву SVG (sx, sy).
-	sx := width/2 + (x-y)*cos30*xyscale
-	sy := height/2 + (x+y)*sin30*xyscale - z*zscale
-	return sx, sy
+	sx = width/2 + (x-y)*cos30*xyscale
+	sy = height/2 + (x+y)*sin30*xyscale - z*zscale
+	return
 }
 
 func f(x, y float64) float64 {
@@ -59,12 +59,12 @@ func f(x, y float64) float64 {
 }
 
 // этой функцией выковыривается z, а заодно x и y
-func xyz(i, j int) (float64, float64, float64) {
+func xyz(i, j int) (x, y, z float64) {
 	// Ищем угловую точку (x,y) ячейки (i,j).
-	x := xyrange * (float64(i)/cells - 0.5)
-	y := xyrange * (float64(j)/cells - 0.5)
+	x = xyrange * (float64(i)/cells - 0.5)
+	y = xyrange * (float64(j)/cells - 0.5)
 	// Вычисляем высоту поверхности z.
-	z := f(x, y)
+	z = f(x, y)
 	return x, y, z
 }
 
