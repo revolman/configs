@@ -4,11 +4,12 @@
 // See page 136.
 
 // The toposort program prints the nodes of a DAG in topological order.
+
+// Алгоритм я подсмотрел у renatofq/gopl
 package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sort"
 )
@@ -25,7 +26,7 @@ var prereqs = map[string][]string{
 		"computer organization",
 	},
 
-	"data structures":       {"discrete math"},
+	"data structures":       {"discrete math", "compilers"}, // "compilers" добавлины для создания цикла
 	"databases":             {"data structures"},
 	"discrete math":         {"intro to programming"},
 	"formal languages":      {"discrete math"},
@@ -38,32 +39,48 @@ var prereqs = map[string][]string{
 
 //!+main
 func main() {
-	for i, course := range topoSort(prereqs) {
+	order, err := topoSort(prereqs)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
+	for i, course := range order {
 		fmt.Printf("%d:\t%s\n", i+1, course)
 	}
 }
 
-func topoSort(m map[string][]string) []string {
-	var order []string            // результирующий срез
-	var parent string             // родительский ключ для проверки на циклы
-	seen := make(map[string]bool) // проверка повторяемости
+func topoSort(m map[string][]string) ([]string, error) {
+	var order []string                 // результирующий срез
+	var cycler = make(map[string]bool) // проверка цикличности, по аналогии с seen, но с очисткой по возвращению
+	seen := make(map[string]bool)      // проверка повторяемости
 
-	var visitAll func(items []string) // функция сортировки
-	visitAll = func(items []string) {
+	var visitAll func(items []string) error // функция сортировки
+	visitAll = func(items []string) error {
 		for _, item := range items { // получаю ключи и для каждого ключа делаю действие
+			// если cycler истинный, то это значит, что item уже был на этом этапе рекурсии
+			if cycler[item] {
+				return fmt.Errorf("%s", item)
+			}
+			// счётчики: были ли уже замечен текущий элемент
 			if !seen[item] {
+				cycler[item] = true
 				seen[item] = true
-				for _, dep := range m[item] { // проверяю все зависимости данного ключа на совпадение с родительским ключом
-					if dep == parent { // если совпало, тогда это зацикливание и результат будет не очень корректным
-						log.Fatalf("Обнаружен цикл мужду %s и %s!\n", dep, item)
-						os.Exit(1)
-					}
+
+				// проваливаемся в рекурсию и обрабатываем ошибку, если cycler будет true
+				if err := visitAll(m[item]); err != nil {
+					return fmt.Errorf("%s --> %s", item, err)
 				}
-				visitAll(m[item])
+
+				// очистка значения по возвращению из рекурсии обязательна!
+				// иначе программа будет считать, что есть циклы там где их нет.
+				cycler[item] = false
+
+				// дополнить список
 				order = append(order, item)
 			}
-			parent = item
 		}
+		return nil // ошибки нет
 	}
 
 	var keys []string
@@ -72,8 +89,11 @@ func topoSort(m map[string][]string) []string {
 	}
 
 	sort.Strings(keys)
-	visitAll(keys)
-	return order
+	if err := visitAll(keys); err != nil {
+		return nil, fmt.Errorf("Обнаружен цикл записимостей: %s", err)
+	}
+
+	return order, nil
 }
 
 //!-main
