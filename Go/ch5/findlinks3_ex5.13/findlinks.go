@@ -84,10 +84,10 @@ func save(rawurl string) error {
 	if strings.HasSuffix(url.Path, ".html") {
 		parts := strings.Split(url.Path, "/")
 		filename = parts[len(parts)-1]                      // copyright.html
-		dir = dir + strings.Join(parts[:len(parts)-1], "/") // /doc/
+		dir = dir + strings.Join(parts[:len(parts)-1], "/") // /doc
 	} else {
-		dir = dir + url.Path
 		filename = "index.html"
+		dir = dir + url.Path
 	}
 
 	fpath := filepath.Join(dir, filename)
