@@ -11,6 +11,7 @@ Go/**/*.json
 Go/**/*.html
 Go/**/*.htm
 Go/**/*_test
+Go/**/golang.org
 **/*.mmdb
 **/__pycache__
 .vscode
