@@ -1,0 +1,49 @@
+version: '3.2'
+
+
+services:
+
+
+  gunicorn:
+    build: ./gunicorn
+    restart: always
+    privileged: true
+    volumes:
+      - ./gunicorn/projects/project1:/srv/www/project1
+      - ./gunicorn/log:/var/log/gunicorn
+    expose:
+      - '8000'
+    command: "gunicorn --access-logfile /var/log/gunicorn/access.log \
+                --error-logfile \
+                /var/log/error.log -c gunicorn.py Project1.wsgi"
+    networks:
+      learning_network:
+        ipv4_address: 10.0.0.15
+    container_name: Gunicorn
+
+
+  nginx:
+    image: nginx:stable
+    restart: always
+    depends_on:
+      - gunicorn
+    volumes:
+      - ./web/config:/etc/nginx
+      - ./web/log:/var/log/nginx
+      - ./web/www:/usr/share/nginx/html
+    ports:
+      - '8080:80'
+      - '8443:443'
+    networks:
+      learning_network:
+        ipv4_address: 10.0.0.10
+    container_name: Nginx-1
+
+
+networks:
+  learning_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
