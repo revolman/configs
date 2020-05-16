@@ -15,7 +15,16 @@ https://github.com/revolman/configs/tree/master/Prometheus%2BGrafana
 #### Фичи и свистоперделки для терминала tmux+zsh:
 https://github.com/revolman/configs/tree/master/tmux-doc
 
+#### Примеры манифестов docker-compose
+https://github.com/revolman/configs/tree/master/docker-compose
+
+#### Пример конфигнурации Nginx для работы с веб-сервером Gunicorn
+https://github.com/revolman/configs/tree/master/Nginx_configs
+
+#### Пример настройки Gunicorn сервера и приложение на Django
+https://github.com/revolman/configs/tree/master/viberr_gunicorn
+
 #### Памятка по Go / материалы из учебника:
-https://github.com/revolman/configs/tree/master/Go
+Вынесено в отдельный репозиторий - https://github.com/revolman/configs/tree/master/Go
 
 Репозиторий дополняется.

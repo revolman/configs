@@ -1,0 +1,11 @@
+#before_script:
+# - pip install -r requirements.txt
+# - python --version
+
+stages:
+ - test1
+
+test1:
+  stage: test1
+  script:
+    - python manage.py test
