@@ -16,3 +16,5 @@ Go/**/golang.org
 **/__pycache__
 .vscode
 python/.idea/
+terraform/**/.terraform/
+
