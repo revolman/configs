@@ -27,4 +27,7 @@ https://github.com/revolman/configs/tree/master/viberr_gunicorn
 #### Памятка по Go / материалы из учебника:
 Вынесено в отдельный репозиторий - https://github.com/revolman/configs/tree/master/Go
 
+#### Памятка по Terraform:
+https://github.com/revolman/configs/tree/master/terraform
+
 Репозиторий дополняется.
