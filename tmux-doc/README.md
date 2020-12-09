@@ -32,7 +32,7 @@ function prompt_char {
 }
 
 NEWLINE=$'\n'
-local ret_status="%(?:%{$fg_bold[green]%}${NEWLINE}╰─➤➤$(prompt_char) :%{$fg_bold[red]%}${NEWLINE}➤➤$(prompt_char) )"
+local ret_status="%(?:%{$fg_bold[green]%}${NEWLINE}╰─➤➤$(prompt_char) :%{$fg_bold[red]%}${NEWLINE}╰─➤➤$(prompt_char) )"
 PROMPT='%{$fg_bold[white]%}╭─ $(whoami):%{$reset_color%} %{$fg_bold[cyan]%}%c%{$reset_color%} $(git_prompt_info) ${ret_status}%{$reset_color%}'
 #PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} $(git_prompt_info)'
 
