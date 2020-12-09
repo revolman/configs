@@ -1,0 +1,54 @@
+{
+  "build": {
+    "stageName": "canonical",
+    "targetRegion": "us-east-1",
+    "targetProfile": "devqa"
+  },
+  "test": {
+    "jacoco": {
+      "additionalSources": [
+        {
+          "org": "streamsets",
+          "repo": "datacollector"
+        },
+        {
+          "org": "EBSCOIS",
+          "repo": "platform.shared.schemavalidator"
+        },
+        {
+          "org": "EBSCOIS",
+          "repo": "platform.shared.streamsetsdc.next.commonlib"
+        }
+      ]
+    },
+    "mailList": [
+      "Valerii_Timofeev@epam.com",
+      "Anna_Kotsupalova@epam.com",
+      "Vitali_Rahin@epam.com"
+    ]
+  },
+  "publish": {
+    "filename": "platform.shared.datapipeline-canonical",
+    "path": "/com/ebsco/platform.shared.datapipeline-canonical"
+  },
+  "preview": {
+    "timeout": "1",
+    "infrastructure": {
+      "kafka": "5.4.0",
+      "mongo": "4.2.2"
+    },
+    "dependencies": {
+      "jobmanager-service": "latest"
+    }
+  },
+  "chart": {
+    "chartGitRepoUrl": "https://github.com/EBSCOIS/platform.shared.datapipeline-helm.git",
+    "branchOrTag": "1.0.8",
+    "chartPath": "datapipeline-charts/ssdc-component"
+  },
+  "DNS":{
+    "record": "canonical",
+    "enabled": false
+  },
+  "pipeline" : "datapipeline"
+}
